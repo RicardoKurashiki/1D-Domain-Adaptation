@@ -1,0 +1,9 @@
+data/*
+!data/README.md
+__pycache__/
+*.pyc
+
+experiments/stage1/*/latents/
+experiments/stage1/*/checkpoint_*.pt
+experiments/stage2/*/latents/
+experiments/stage2/*/checkpoint_*.pt
