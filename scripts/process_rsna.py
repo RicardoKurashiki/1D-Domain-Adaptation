@@ -1,6 +1,7 @@
 from time import sleep
 import os
 import shutil
+import pydicom
 import argparse
 import pandas as pd
 
@@ -25,17 +26,16 @@ def create_dirs(train_path, val_path, test_path):
 
     print("Pastas criadas com sucesso\n")
 
-def create_dataframe(path):
+def create_dataframe(path, csv):
+    folders = ["stage_2_train_images", "stage_2_test_images"]
     data = []
 
-    classes = ["NORMAL", "PNEUMONIA"]
-    splits = ["train", "test"]
-
-    for sp in splits:
-        for cls in classes:
-            img_paths = [img for img in os.listdir(os.path.join(path, sp, cls)) if img.endswith(".jpeg")]
-            for img_path in img_paths:
-                data.append({"className": cls, "path": os.path.join(path, sp, cls, img_path), "imgName": img_path})
+    for folder in folders:
+        img_folder = os.path.join(path, folder)
+        for img in [img for img in os.listdir(os.path.join(img_folder)) if img.endswith(".dcm")]:
+            id = img.split(".")[0]
+            className = "NORMAL" if (csv[csv["patientId"] == id]["Target"] == 0).any() else "PNEUMONIA"
+            data.append({"className": className, "path": os.path.join(img_folder, img), "imgName": img})
 
     return pd.DataFrame(data=data)
 
@@ -48,8 +48,9 @@ def split_data(df, train_ratio, val_ratio, test_ratio, seed):
 def save_images(df, path, target_size=224):
     for index, row in df.iterrows():
         try:
-            img = resize_image(row["path"], target_size)
-            save_path = os.path.join(path, row["className"], row["imgName"])
+            img = dcm_to_jpg(row["path"])
+            img = resize_image(img, target_size)
+            save_path = os.path.join(path, row["className"], row["imgName"].replace(".dcm", ".jpeg"))
             counter = 1
             while os.path.exists(save_path):
                 save_path = save_path.replace(".jpeg", f"_{counter}.jpeg")
@@ -58,9 +59,19 @@ def save_images(df, path, target_size=224):
         except Exception as e:
             print(f"Erro ao salvar imagem {row['path']}: {e}")
 
+def dcm_to_jpg(path):
+    try:
+        ds = pydicom.dcmread(path)
+        img = ds.pixel_array
+        img = Image.fromarray(img)
+        return img
+    except Exception as e:
+        print(f"Erro ao converter imagem {path}: {e}")
+        return None
+
 def resize_image(image, target_size=224):
     try:
-        img = Image.open(image).convert('RGB')
+        img = image.convert('RGB')
         img = img.resize((target_size, target_size))
         return img
     except Exception as e:
@@ -127,27 +138,29 @@ if __name__ == "__main__":
     test_path = os.path.join(output_path, "test")
 
     create_dirs(train_path, val_path, test_path)
-    # df = create_dataframe(dataset_path)
-    # train_df, val_df, test_df = split_data(df, train_ratio, val_ratio, test_ratio, seed)
+    csv = pd.read_csv(os.path.join(dataset_path, "stage_2_train_labels.csv"))
 
-    # print(f"\nFull Dataset ({len(df)} Samples)")
-    # print(f"Full Dataset Split: {df['className'].value_counts()}")
+    df = create_dataframe(dataset_path, csv)
+    train_df, val_df, test_df = split_data(df, train_ratio, val_ratio, test_ratio, seed)
 
-    # print(f"\nTrain Dataset ({len(train_df)} Samples)")
-    # print(f"Train Split: {train_df['className'].value_counts()}")
+    print(f"\nFull Dataset ({len(df)} Samples)")
+    print(f"Full Dataset Split: {df['className'].value_counts()}")
 
-    # print(f"\nVal Dataset ({len(val_df)} Samples)")
-    # print(f"Val Split: {val_df['className'].value_counts()}")
+    print(f"\nTrain Dataset ({len(train_df)} Samples)")
+    print(f"Train Split: {train_df['className'].value_counts()}")
 
-    # print(f"\nTest Dataset ({len(test_df)} Samples)")
-    # print(f"Test Split: {test_df['className'].value_counts()}")
+    print(f"\nVal Dataset ({len(val_df)} Samples)")
+    print(f"Val Split: {val_df['className'].value_counts()}")
 
-    # save_images(train_df, train_path, target_size)
-    # save_images(val_df, val_path, target_size)
-    # save_images(test_df, test_path, target_size)
+    print(f"\nTest Dataset ({len(test_df)} Samples)")
+    print(f"Test Split: {test_df['className'].value_counts()}")
 
-    # print(f"\nArquivos no train: {len(os.listdir(os.path.join(train_path, "NORMAL"))) + len(os.listdir(os.path.join(train_path, "PNEUMONIA")))}")
-    # print(f"Arquivos no val: {len(os.listdir(os.path.join(val_path, "NORMAL"))) + len(os.listdir(os.path.join(val_path, "PNEUMONIA")))}")
-    # print(f"Arquivos no test: {len(os.listdir(os.path.join(test_path, "NORMAL"))) + len(os.listdir(os.path.join(test_path, "PNEUMONIA")))}")
+    save_images(train_df, train_path, target_size)
+    save_images(val_df, val_path, target_size)
+    save_images(test_df, test_path, target_size)
 
-    # print("\nDataset processado com sucesso!")
+    print(f"\nArquivos no train: {len(os.listdir(os.path.join(train_path, "NORMAL"))) + len(os.listdir(os.path.join(train_path, "PNEUMONIA")))}")
+    print(f"Arquivos no val: {len(os.listdir(os.path.join(val_path, "NORMAL"))) + len(os.listdir(os.path.join(val_path, "PNEUMONIA")))}")
+    print(f"Arquivos no test: {len(os.listdir(os.path.join(test_path, "NORMAL"))) + len(os.listdir(os.path.join(test_path, "PNEUMONIA")))}")
+
+    print("\nDataset processado com sucesso!")
