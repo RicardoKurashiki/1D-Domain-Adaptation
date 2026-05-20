@@ -37,3 +37,16 @@ class ClassificationHead(nn.Module):
         self.classifier.load_state_dict(
             torch.load(weight_path, map_location=device, weights_only=True)
         )
+    
+    def get_trainable_params(self):
+        return sum(p.numel() for p in self.classifier.parameters() if p.requires_grad)
+    
+    def get_model_size(self):
+        param_size = 0
+        for param in self.classifier.parameters():
+            param_size += param.nelement() * param.element_size()
+        buffer_size = 0
+        for buffer in self.classifier.buffers():
+            buffer_size += buffer.nelement() * buffer.element_size()
+
+        return (param_size + buffer_size) / 1024**2

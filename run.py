@@ -20,4 +20,8 @@ extractor = FeatureExtractor(backbone="resnet18", unfrozen_layers=3)
 classifier = ClassificationHead(in_features=extractor.num_ftrs, out_features=2)
 model = ClassifierModel(extractor, classifier)
 
-summary(extractor, depth=10, col_names=["trainable"])
+summary(model, depth=10, col_names=["trainable"])
+
+print(f"\nExtractor size: {extractor.get_trainable_params()} params | {extractor.get_model_size():.3f} MB")
+print(f"Classifier size: {classifier.get_trainable_params()} params | {classifier.get_model_size():.3f} MB")
+print(f"Model size: {model.get_trainable_params()} params | {model.get_model_size():.3f} MB")

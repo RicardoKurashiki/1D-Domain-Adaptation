@@ -22,3 +22,9 @@ class ClassifierModel(nn.Module):
         os.makedirs(path, exist_ok=True)
         self.extractor.load(path)
         self.head.load(path)
+    
+    def get_trainable_params(self):
+        return self.extractor.get_trainable_params() + self.head.get_trainable_params()
+
+    def get_model_size(self):
+        return self.extractor.get_model_size() + self.head.get_model_size()
