@@ -1,14 +1,14 @@
 from torchinfo import summary
 
-from src.datasets import KermanyDataset, MiniBatchSampler
+from src.datasets import RSNADataset, MiniBatchSampler
 from src.models import FeatureExtractor, ClassificationHead, ClassifierModel
 from src import utils
 
 utils.set_seed(42)
 
-train_dataset = KermanyDataset(split="train")
-val_dataset = KermanyDataset(split="val")
-test_dataset = KermanyDataset(split="test")
+train_dataset = RSNADataset(split="train")
+val_dataset = RSNADataset(split="val")
+test_dataset = RSNADataset(split="test")
 
 print("Train: ", len(train_dataset))
 print("Val: ", len(val_dataset))
