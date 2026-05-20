@@ -6,7 +6,7 @@ from torchinfo import summary
 from src.datasets import RSNADataset, MiniBatchSampler
 from src.models import FeatureExtractor, ClassificationHead, ClassifierModel
 from src.configuration import Configuration, EarlyStoppingConfig
-from src import utils, train_stage1
+from src import utils, stage1
 
 
 if __name__ == '__main__':
@@ -34,6 +34,7 @@ if __name__ == '__main__':
 
     train_data = utils.get_dataloader(train_dataset, sampler=sampler, shuffle=False)
     val_data = utils.get_dataloader(val_dataset, batch_size=32, shuffle=False)
+    test_data = utils.get_dataloader(test_dataset, batch_size=32, shuffle=False)
 
     lr = 0.0001
 
@@ -43,4 +44,5 @@ if __name__ == '__main__':
 
     training_config = Configuration(epochs=5, optimizer=optimizer, criterion=criterion, early_stopping=es, reduce_lr=None)
 
-    # train_stage1.train(path="./", model=model, train_data=train_data, val_data=val_data, config=training_config)
+    # stage1.train(path="./", model=model, train_data=train_data, val_data=val_data, config=training_config)
+    stage1.test(path="./", model=model, data=test_data, criterion=criterion)

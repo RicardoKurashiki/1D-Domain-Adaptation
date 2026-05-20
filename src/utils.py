@@ -13,9 +13,6 @@ def set_seed(seed):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
-def load_yaml(config):
-    pass
-
 def set_data_augmentation(config, split):
     pass
 
