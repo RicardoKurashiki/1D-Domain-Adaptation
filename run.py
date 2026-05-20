@@ -1,6 +1,8 @@
+from torchinfo import summary
+
 from src.datasets import KermanyDataset, MiniBatchSampler
+from src.models import FeatureExtractor, ClassificationHead, ClassifierModel
 from src import utils
-import pandas as pd
 
 utils.set_seed(42)
 
@@ -14,15 +16,8 @@ print("Test: ", len(test_dataset))
 
 sampler = MiniBatchSampler(train_dataset, batch_size=4)
 
-for i in range(10):
-    print("iter: ", i)
-    results = []
-    for batch in sampler:
-        result = {"batch": batch, "idx": []}
-        for index in batch:
-            c = train_dataset.data.iloc[index]
-            result["idx"].append({"idx": index, "label": c["label"], "path": c["path"]})
-        results.append(result)
+extractor = FeatureExtractor(backbone="resnet18", unfrozen_layers=3)
+classifier = ClassificationHead(in_features=extractor.num_ftrs, out_features=2)
+model = ClassifierModel(extractor, classifier)
 
-    df = pd.DataFrame(data=results)
-    df.to_csv(f"batches_{i+1}.csv", index=False)
+summary(extractor, depth=10, col_names=["trainable"])
