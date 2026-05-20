@@ -1,3 +1,5 @@
+import time
+
 class ComputationalMetrics():
     def __init__(self, trainable_params:int, model_size:float):
         self.trainable_params = trainable_params

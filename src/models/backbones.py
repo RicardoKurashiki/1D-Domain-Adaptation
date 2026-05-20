@@ -70,7 +70,6 @@ class FeatureExtractor(nn.Module):
 
     def forward(self, x):
         x = self.backbone(x)
-        x = x.logits
         return x.view(x.size(0), -1)
 
     def save(self, path):

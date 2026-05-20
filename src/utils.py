@@ -3,6 +3,7 @@ import random
 import numpy
 import torch
 import torch.nn as nn
+from torch.utils.data import DataLoader
 
 def set_seed(seed):
     random.seed(seed)
@@ -33,3 +34,21 @@ def update_registry(registry_path, row):
     # se o arquivo não existe, cria com header
     # se já existe, verifica se o exp_id já tem linha (update) ou adiciona
     pass
+
+def get_dataloader(dataset, sampler=None, batch_size=32, shuffle=True):
+    pin_memory = torch.cuda.is_available()
+    if sampler is not None:
+        return DataLoader(
+            dataset,
+            batch_sampler=sampler,
+            shuffle=shuffle,
+            pin_memory=pin_memory,
+            num_workers=2
+        )
+    return DataLoader(
+        dataset,
+        batch_size=batch_size,
+        shuffle=shuffle,
+        pin_memory=pin_memory,
+        num_workers=2
+    )
