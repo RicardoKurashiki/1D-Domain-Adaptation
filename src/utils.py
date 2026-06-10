@@ -5,6 +5,9 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 
+from sklearn.decomposition import PCA
+import matplotlib.pyplot as plt
+
 def set_seed(seed):
     random.seed(seed)
     numpy.random.seed(seed)
@@ -49,3 +52,33 @@ def get_dataloader(dataset, sampler=None, batch_size=32, shuffle=True):
         pin_memory=pin_memory,
         num_workers=2
     )
+
+def plot_pca(path:str, features, labels, title:str="PCA", n_components=2, pca=None, prototypes=None, prototype_labels=None):
+    if pca is None:
+        pca = PCA(n_components=n_components)
+        pca.fit(features)
+    
+    features = pca.transform(features)
+
+    plt.figure(figsize=(10,8))
+    scatter = plt.scatter(features[:,0], features[:,1], c=labels, alpha=0.3)
+    plt.colorbar(scatter, label="Class")
+
+    if prototypes is not None:
+        centroids_2d = pca.transform(prototypes)
+        for i, c in enumerate(centroids_2d):
+            color = scatter.cmap(scatter.norm(prototype_labels[i])) if prototype_labels is not None else "red"
+            label = f"Prototype class {prototype_labels[i]}" if prototype_labels is not None else f"Cluster {i}"
+            plt.scatter(c[0], c[1], c=[color], marker="X", s=300, edgecolors="black", linewidths=3, label=label, zorder=5)
+        plt.legend()
+
+    plt.title(title)
+    plt.xlabel("PC1")
+    plt.ylabel("PC2")
+
+    output_path = os.path.join(path, f"{title.lower().replace(" ", "_")}_pca.png")
+    plt.savefig(output_path, bbox_inches="tight")
+    plt.close()
+    
+    return pca
+    

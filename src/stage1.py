@@ -136,6 +136,8 @@ def test(path: str, model: ClassifierModel, data: DataLoader, criterion, verbose
 def extract_features(path: str, model: FeatureExtractor, data: DataLoader, verbose:bool=True):
     print(f"Loading model from {path}")
     model.load(path)
+    model = model.to(device)
+
     model.eval()
 
     all_features = []
@@ -153,8 +155,7 @@ def extract_features(path: str, model: FeatureExtractor, data: DataLoader, verbo
     all_features = np.concatenate(all_features, axis=0)
     all_labels = np.concatenate(all_labels, axis=0)
 
-    # TODO: Ajustar para salvar esses dados
+    np.save(os.path.join(path, f"features.npy"), all_features)
+    np.save(os.path.join(path, f"labels.npy"), all_labels)
+
     return all_features, all_labels
-    
-    
-    
