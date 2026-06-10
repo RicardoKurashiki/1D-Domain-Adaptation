@@ -3,10 +3,10 @@ import torch.optim as optim
 
 from torchinfo import summary
 
-from src.datasets import KermanyDataset, RSNADataset, MiniBatchSampler
+from src.datasets import KermanyDataset, RSNADataset, FeatureSpaceDataset, MiniBatchSampler
 from src.models import FeatureExtractor, ClassificationHead, ClassifierModel, Autoencoder
 from src.configuration import Configuration, EarlyStoppingConfig
-from src import utils, stage1
+from src import utils, stage1, prototype
 
 
 if __name__ == '__main__':
@@ -47,8 +47,7 @@ if __name__ == '__main__':
     # stage1.train(path="./", model=model, train_data=train_data, val_data=val_data, config=training_config)
     stage1.test(path="./", model=model, data=test_data, criterion=criterion)
 
-    target_data = utils.get_dataloader(RSNADataset(split="test"), batch_size=32, shuffle=False)
-    stage1.test(path="./", model=model, data=target_data, criterion=criterion)
+    features, labels = stage1.extract_features(path="./", model=extractor, data=train_data)
+    feature_dataset = FeatureSpaceDataset(features=features, labels=labels)
+    prototype.run(dataset=feature_dataset, undersampling="enn")
 
-    autoencoder = Autoencoder("simple_autoencoder", model.extractor.num_ftrs, model.extractor.num_ftrs//2, model.extractor.num_ftrs//4, 2)
-    summary(autoencoder, depth=10, col_names=["trainable"])
