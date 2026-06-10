@@ -1,11 +1,7 @@
 import os
 import torch
 import torch.nn as nn
-
-from torchvision.models import resnet18, ResNet18_Weights
-from torchvision.models import resnet50, ResNet50_Weights
-from torchvision.models import vit_b_16, ViT_B_16_Weights
-
+from peft import LoraConfig, get_peft_model
 device = (
     torch.accelerator.current_accelerator().type
     if torch.accelerator.is_available()
@@ -13,34 +9,47 @@ device = (
 )
 
 class FeatureExtractor(nn.Module):
-    def __init__(self, backbone: str, unfrozen_layers:int=None):
+    def __init__(self, backbone: str, unfrozen_layers:int=None, lora_config:LoraConfig=None):
         super(FeatureExtractor, self).__init__()
         self.num_ftrs=None
+        self.lora_config = lora_config
+        self.is_lora=False
         self.__get_backbone__(backbone)
         self.__unfreeze_layers__(unfrozen_layers)
 
     def __get_backbone__(self,backbone:str):
         match backbone:
             case "resnet18":
+                from torchvision.models import resnet18, ResNet18_Weights
                 weights = ResNet18_Weights.IMAGENET1K_V1
                 base_model = resnet18(weights=weights)
                 self.num_ftrs = base_model.fc.in_features
                 self.backbone = nn.Sequential(*list(base_model.children())[:-1])
             case "resnet50":
+                from torchvision.models import resnet50, ResNet50_Weights
                 weights = ResNet50_Weights.IMAGENET1K_V2
                 base_model = resnet50(weights=weights)
                 self.num_ftrs = base_model.fc.in_features
                 self.backbone = nn.Sequential(*list(base_model.children())[:-1])
             case "vitb16":
+                from torchvision.models import vit_b_16, ViT_B_16_Weights
                 weights = ViT_B_16_Weights.IMAGENET1K_V1
                 base_model = vit_b_16(weights=weights)
                 base_model.heads = nn.Identity()
                 self.num_ftrs = base_model.heads.head.in_features
                 self.backbone = base_model
+            case "vit_lora":
+                from transformers import ViTModel
+                base_model = ViTModel.from_pretrained("google/vit-base-patch16-224")
+                self.num_ftrs = base_model.config.hidden_size
+                self.backbone = get_peft_model(base_model, self.lora_config)
+                self.is_lora = True
             case _:
                 print("Não encontrado")
     
     def __unfreeze_layers__(self, n_layers:int):
+        if self.is_lora:
+            return
         for p in self.backbone.parameters():
             p.requires_grad = False
         if n_layers == 0:
@@ -69,6 +78,8 @@ class FeatureExtractor(nn.Module):
 
 
     def forward(self, x):
+        if self.is_lora:
+            return self.backbone(x).last_hidden_state[:,0,:]
         x = self.backbone(x)
         return x.view(x.size(0), -1)
 

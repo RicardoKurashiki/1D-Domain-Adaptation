@@ -3,8 +3,8 @@ import torch.optim as optim
 
 from torchinfo import summary
 
-from src.datasets import RSNADataset, MiniBatchSampler
-from src.models import FeatureExtractor, ClassificationHead, ClassifierModel
+from src.datasets import KermanyDataset, RSNADataset, MiniBatchSampler
+from src.models import FeatureExtractor, ClassificationHead, ClassifierModel, Autoencoder
 from src.configuration import Configuration, EarlyStoppingConfig
 from src import utils, stage1
 
@@ -12,9 +12,9 @@ from src import utils, stage1
 if __name__ == '__main__':
     utils.set_seed(42)
 
-    train_dataset = RSNADataset(split="train")
-    val_dataset = RSNADataset(split="val")
-    test_dataset = RSNADataset(split="test")
+    train_dataset = KermanyDataset(split="train")
+    val_dataset = KermanyDataset(split="val")
+    test_dataset = KermanyDataset(split="test")
 
     print("Train: ", len(train_dataset))
     print("Val: ", len(val_dataset))
@@ -22,7 +22,7 @@ if __name__ == '__main__':
 
     sampler = MiniBatchSampler(train_dataset, batch_size=32)
 
-    extractor = FeatureExtractor(backbone="resnet18", unfrozen_layers=None)
+    extractor = FeatureExtractor(backbone="resnet18", unfrozen_layers=1)
     classifier = ClassificationHead(in_features=extractor.num_ftrs, out_features=2)
     model = ClassifierModel(extractor, classifier)
 
@@ -46,3 +46,9 @@ if __name__ == '__main__':
 
     # stage1.train(path="./", model=model, train_data=train_data, val_data=val_data, config=training_config)
     stage1.test(path="./", model=model, data=test_data, criterion=criterion)
+
+    target_data = utils.get_dataloader(RSNADataset(split="test"), batch_size=32, shuffle=False)
+    stage1.test(path="./", model=model, data=target_data, criterion=criterion)
+
+    autoencoder = Autoencoder("simple_autoencoder", model.extractor.num_ftrs, model.extractor.num_ftrs//2, model.extractor.num_ftrs//4, 2)
+    summary(autoencoder, depth=10, col_names=["trainable"])
