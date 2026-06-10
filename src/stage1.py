@@ -8,7 +8,7 @@ from tqdm import tqdm
 
 from .configuration import Configuration
 from .computational_metrics import ComputationalMetrics
-from .models import ClassifierModel, FeatureExtractor
+from .models import ClassifierModel
 
 device = (
     torch.accelerator.current_accelerator().type
@@ -132,30 +132,3 @@ def test(path: str, model: ClassifierModel, data: DataLoader, criterion, verbose
     test_acc = (all_preds == all_labels).sum() / len(all_labels)
 
     print(test_acc)
-
-def extract_features(path: str, model: FeatureExtractor, data: DataLoader, verbose:bool=True):
-    print(f"Loading model from {path}")
-    model.load(path)
-    model = model.to(device)
-
-    model.eval()
-
-    all_features = []
-    all_labels = []
-    pbar = tqdm(data, desc="EXTRACTION", leave=False)
-    
-    for inputs, labels in pbar:
-        inputs = inputs.to(device)
-        labels = labels.to(device)
-        with torch.no_grad():
-            features = model(inputs)
-        all_features.append(features.cpu().detach().numpy())
-        all_labels.append(labels.cpu().numpy())
-
-    all_features = np.concatenate(all_features, axis=0)
-    all_labels = np.concatenate(all_labels, axis=0)
-
-    np.save(os.path.join(path, f"features.npy"), all_features)
-    np.save(os.path.join(path, f"labels.npy"), all_labels)
-
-    return all_features, all_labels

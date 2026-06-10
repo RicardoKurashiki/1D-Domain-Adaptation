@@ -8,10 +8,11 @@ from torchinfo import summary
 from src.datasets import KermanyDataset, RSNADataset, FeatureSpaceDataset, MiniBatchSampler
 from src.models import FeatureExtractor, ClassificationHead, ClassifierModel, Autoencoder
 from src.configuration import Configuration, EarlyStoppingConfig
+from src.extract import extract_features
 from src import utils, stage1, stage2, prototype
 
 SEED = 42
-BATCH_SIZE = 16
+BATCH_SIZE = 100
 EPOCHS = 5
 N_CLUSTERS = 2
 LR = 0.0001
@@ -49,16 +50,14 @@ if __name__ == '__main__':
 
     training_config = Configuration(epochs=EPOCHS, optimizer=optimizer, criterion=criterion, early_stopping=es, reduce_lr=None)
 
-    stage1.train(path="./", model=model, train_data=train_data, val_data=val_data, config=training_config)
-    stage1.test(path="./", model=model, data=test_data, criterion=criterion)
-    features, labels = stage1.extract_features(path="./", model=extractor, data=train_data)
+    # stage1.train(path="./", model=model, train_data=train_data, val_data=val_data, config=training_config)
+    # stage1.test(path="./", model=model, data=test_data, criterion=criterion)
+    features, labels = extract_features(path="./", model=extractor, data=train_data)
 
     features = np.load(os.path.join("./", f"features.npy"))
     labels = np.load(os.path.join("./", f"labels.npy"))
 
     feature_dataset = FeatureSpaceDataset(features=features, labels=labels)
     feature_data = utils.get_dataloader(feature_dataset, batch_size=BATCH_SIZE, shuffle=False)
-    
-    stage2.test_features(path="./", model=classifier, data=feature_data, criterion=criterion)
 
-    # pt_dataset = prototype.run(dataset=feature_dataset, undersampling="enn", clustering="k_means", k=N_CLUSTERS, seed=SEED)
+    pt_dataset = prototype.run(dataset=feature_dataset, undersampling="enn", clustering="k_means", k=N_CLUSTERS, seed=SEED)
