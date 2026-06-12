@@ -22,7 +22,13 @@ class Autoencoder(nn.Module):
             from .autoencoders import ConditionalVariationalAutoencoder
             return ConditionalVariationalAutoencoder(input_dim=self.input_dim, hidden_dim=self.hidden_dim, latent_dim=self.latent_dim, n_classes=self.n_classes)
         
-    def forward(self, x):
+    def forward(self, x, labels=None):
+        if self.arch == "conditional_variational_autoencoder":
+            if labels is None:
+                raise ValueError("labels must be provided for conditional_variational_autoencoder")
+            import torch.nn.functional as F
+            c = F.one_hot(labels, num_classes=self.n_classes).float()
+            return self.model(x, c)
         return self.model(x)
 
     def save(self, path):

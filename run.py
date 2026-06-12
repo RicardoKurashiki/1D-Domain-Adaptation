@@ -118,7 +118,7 @@ if __name__ == '__main__':
         axis_limits=axis_limits
     )
 
-    stage2.train(path="./", model=autoencoder, train_data=tgt_feature_data, val_data=tgt_val_feature_data, config=ae_config)
+    # stage2.train(path="./", model=autoencoder, train_data=tgt_feature_data, val_data=tgt_val_feature_data, config=ae_config)
     aligned_features, aligned_labels = align_features(path="./", model=autoencoder, data=tgt_test_feature_data, data_label="target_aligned")
     aligned_dataset = FeatureSpaceDataset(features=aligned_features, labels=aligned_labels)
     aligned_data = utils.get_dataloader(aligned_dataset, batch_size=BATCH_SIZE, shuffle=False)

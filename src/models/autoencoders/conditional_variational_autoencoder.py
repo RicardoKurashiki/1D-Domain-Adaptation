@@ -1,5 +1,12 @@
+import os
 import torch
 import torch.nn as nn
+
+device = (
+    torch.accelerator.current_accelerator().type
+    if torch.accelerator.is_available()
+    else "cpu"
+)
 
 class _Encoder(nn.Module):
     def __init__(self, input_dim, hidden_dim, latent_dim, n_classes):
@@ -18,6 +25,18 @@ class _Encoder(nn.Module):
         log_var = self.FC_var(h_)
         return mean, log_var
 
+    def save(self, path):
+        os.makedirs(path, exist_ok=True)
+        weight_path = os.path.join(path, "cvae_encoder.pt")
+        torch.save(self.state_dict(), weight_path)
+    
+    def load(self, path):
+        weight_path = os.path.join(path, "cvae_encoder.pt")
+        if not os.path.exists(weight_path):
+            return
+        self.load_state_dict(
+            torch.load(weight_path, map_location=device, weights_only=True)
+        )
 
 class _Decoder(nn.Module):
     def __init__(self, output_dim, hidden_dim, latent_dim, n_classes):
@@ -33,6 +52,19 @@ class _Decoder(nn.Module):
         h = self.LeakyReLU(self.FC_hidden2(h))
         x_hat = self.FC_output(h)
         return x_hat
+
+    def save(self, path):
+        os.makedirs(path, exist_ok=True)
+        weight_path = os.path.join(path, "cvae_decoder.pt")
+        torch.save(self.state_dict(), weight_path)
+    
+    def load(self, path):
+        weight_path = os.path.join(path, "cvae_decoder.pt")
+        if not os.path.exists(weight_path):
+            return
+        self.load_state_dict(
+            torch.load(weight_path, map_location=device, weights_only=True)
+        )
 
 
 class ConditionalVariationalAutoencoder(nn.Module):
@@ -51,3 +83,12 @@ class ConditionalVariationalAutoencoder(nn.Module):
         z = self.reparameterization(mean, torch.exp(0.5 * log_var))
         x_hat = self.decoder(z, c)
         return x_hat, z, mean, log_var
+
+    def save(self, path):
+        os.makedirs(path, exist_ok=True)
+        self.encoder.save(path)
+        self.decoder.save(path)
+    
+    def load(self, path):
+        self.encoder.load(path)
+        self.decoder.load(path)

@@ -56,13 +56,17 @@ def align_features(path: str, model: Autoencoder, data: DataLoader, data_label: 
     with torch.no_grad():
         for inputs, labels in pbar:
             inputs = inputs.float().to(device)
+            labels = labels.to(device)
             is_vae = model.arch in ("variational_autoencoder", "conditional_variational_autoencoder")
             if is_vae:
-                x_recon, z, mean, log_var = model(inputs)
+                if model.arch == "conditional_variational_autoencoder":
+                    x_recon, z, mean, log_var = model(inputs, labels)
+                else:
+                    x_recon, z, mean, log_var = model(inputs)
             else:
                 x_recon, z = model(inputs)
             all_features.append(x_recon.cpu().numpy())
-            all_labels.append(labels.numpy())
+            all_labels.append(labels.cpu().numpy())
 
     all_features = np.concatenate(all_features, axis=0)
     all_labels = np.concatenate(all_labels, axis=0)
