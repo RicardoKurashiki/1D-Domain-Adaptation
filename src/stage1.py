@@ -86,7 +86,7 @@ def train(path:str, model: ClassifierModel, train_data:DataLoader, val_data:Data
         if config.has_reduce_lr:
             config.reduce_lr.scheduler.step(epoch_loss)
             if verbose:
-                current_lr = config.reduce_lr.scheduler.config.optimizer.param_groups[0]['lr']
+                current_lr = config.reduce_lr.get_last_lr()
                 print(f"Epoch {epoch + 1}/{config.epochs} - New Learning Rate: {current_lr:.6f}")
         
         if torch.cuda.is_available():

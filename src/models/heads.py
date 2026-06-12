@@ -33,6 +33,7 @@ class ClassificationHead(nn.Module):
     def load(self, path):
         weight_path = os.path.join(path, "head_weight.pt")
         if not os.path.exists(weight_path):
+            print("Não há nenhum peso para ser carregado no ClassificationHead.")
             return
         self.classifier.load_state_dict(
             torch.load(weight_path, map_location=device, weights_only=True)

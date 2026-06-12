@@ -7,33 +7,46 @@ from .datasets import FeatureSpaceDataset
 from .clustering import KCenterGreedy
 
 def k_means(features, labels, n_clusters, seed):
-    clusterer = KMeans(n_clusters=n_clusters, random_state=seed)
-    clusterer.fit(features)
-    centroids = clusterer.cluster_centers_
-    labels = np.array([
-            np.bincount(labels[clusterer.labels_ == c].astype(int)).argmax()
-            for c in range(n_clusters)
-        ])
+    unique_labels = np.unique(labels)
+    all_centroids = []
+    all_labels = []
+    for label in unique_labels:
+        class_features = features[labels == label]
+        actual_clusters = min(n_clusters, len(class_features))
+        if actual_clusters <= 0:
+            continue
+        clusterer = KMeans(n_clusters=actual_clusters, random_state=seed)
+        clusterer.fit(class_features)
+        all_centroids.append(clusterer.cluster_centers_)
+        all_labels.append(np.full(actual_clusters, label))
+    
+    centroids = np.concatenate(all_centroids, axis=0)
+    labels = np.concatenate(all_labels, axis=0)
     return centroids, labels
 
 def k_medoids(features, labels, n_clusters, seed):
     clusterer = KMedoids(n_clusters=n_clusters, random_state=seed, init="k-medoids++")
     clusterer.fit(features)
     centroids = clusterer.cluster_centers_
-    labels = np.array([
-            np.bincount(labels[clusterer.labels_ == c].astype(int)).argmax()
-            for c in range(n_clusters)
-        ])
+    labels = labels[clusterer.medoid_indices_]
     return centroids, labels
 
 def k_center(features, labels, n_clusters, seed):
-    clusterer = KCenterGreedy(n_clusters=n_clusters, random_state=seed)
-    clusterer.fit(features)
-    centroids = clusterer.cluster_centers_
-    labels = np.array([
-            np.bincount(labels[clusterer.labels_ == c].astype(int)).argmax()
-            for c in range(n_clusters)
-        ])
+    unique_labels = np.unique(labels)
+    all_centroids = []
+    all_labels = []
+    for label in unique_labels:
+        class_features = features[labels == label]
+        actual_clusters = min(n_clusters, len(class_features))
+        if actual_clusters <= 0:
+            continue
+        clusterer = KCenterGreedy(n_clusters=actual_clusters, random_state=seed)
+        clusterer.fit(class_features)
+        all_centroids.append(clusterer.cluster_centers_)
+        all_labels.append(np.full(actual_clusters, label))
+    
+    centroids = np.concatenate(all_centroids, axis=0)
+    labels = np.concatenate(all_labels, axis=0)
     return centroids, labels
 
 def enn(data, labels):

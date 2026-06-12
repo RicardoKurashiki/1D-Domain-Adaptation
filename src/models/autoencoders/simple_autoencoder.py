@@ -1,5 +1,12 @@
+import os
 import torch
 import torch.nn as nn
+
+device = (
+    torch.accelerator.current_accelerator().type
+    if torch.accelerator.is_available()
+    else "cpu"
+)
 
 class _Encoder(nn.Module):
     def __init__(self, input_dim, hidden_dim, latent_dim):
@@ -14,6 +21,19 @@ class _Encoder(nn.Module):
         z = self.fc2(x)
         return z
 
+    def save(self, path):
+        os.makedirs(path, exist_ok=True)
+        weight_path = os.path.join(path, "simple_encoder.pt")
+        torch.save(self.state_dict(), weight_path)
+    
+    def load(self, path):
+        weight_path = os.path.join(path, "simple_encoder.pt")
+        if not os.path.exists(weight_path):
+            return
+        self.load_state_dict(
+            torch.load(weight_path, map_location=device, weights_only=True)
+        )
+
 class _Decoder(nn.Module):
     def __init__(self, input_dim, hidden_dim, latent_dim):
         super(_Decoder, self).__init__()
@@ -26,7 +46,19 @@ class _Decoder(nn.Module):
         z = self.relu(z)
         x_hat = self.fc2(z)
         return x_hat
-
+    
+    def save(self, path):
+        os.makedirs(path, exist_ok=True)
+        weight_path = os.path.join(path, "simple_decoder.pt")
+        torch.save(self.state_dict(), weight_path)
+    
+    def load(self, path):
+        weight_path = os.path.join(path, "simple_decoder.pt")
+        if not os.path.exists(weight_path):
+            return
+        self.load_state_dict(
+            torch.load(weight_path, map_location=device, weights_only=True)
+        )
 
 class SimpleAutoencoder(nn.Module):
     def __init__(self, input_dim:int, hidden_dim:int, latent_dim:int):
@@ -37,4 +69,13 @@ class SimpleAutoencoder(nn.Module):
     def forward(self, x):
         z = self.encoder(x)
         x_hat = self.decoder(z)
-        return x_hat
+        return x_hat, z
+
+    def save(self, path):
+        os.makedirs(path, exist_ok=True)
+        self.encoder.save(path)
+        self.decoder.save(path)
+    
+    def load(self, path):
+        self.encoder.load(path)
+        self.decoder.load(path)

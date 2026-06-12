@@ -38,10 +38,10 @@ def update_registry(registry_path, row):
 def get_dataloader(dataset, sampler=None, batch_size=32, shuffle=True):
     pin_memory = torch.cuda.is_available()
     if sampler is not None:
+        # batch_sampler é mutuamente exclusivo com shuffle e batch_size
         return DataLoader(
             dataset,
             batch_sampler=sampler,
-            shuffle=shuffle,
             pin_memory=pin_memory,
             num_workers=2
         )
@@ -53,7 +53,7 @@ def get_dataloader(dataset, sampler=None, batch_size=32, shuffle=True):
         num_workers=2
     )
 
-def plot_pca(path:str, features, labels, title:str="PCA", n_components=2, pca=None, prototypes=None, prototype_labels=None):
+def plot_pca(path:str, features, labels, title:str="PCA", n_components=2, pca=None, prototypes=None, prototype_labels=None, axis_limits=None):
     if pca is None:
         pca = PCA(n_components=n_components)
         pca.fit(features)
@@ -72,6 +72,21 @@ def plot_pca(path:str, features, labels, title:str="PCA", n_components=2, pca=No
             plt.scatter(c[0], c[1], c=[color], marker="X", s=300, edgecolors="black", linewidths=3, label=label, zorder=5)
         plt.legend()
 
+    if axis_limits is not None:
+        xlim, ylim = axis_limits
+        plt.xlim(xlim)
+        plt.ylim(ylim)
+    else:
+        x_min, x_max = features[:, 0].min(), features[:, 0].max()
+        y_min, y_max = features[:, 1].min(), features[:, 1].max()
+        x_margin = (x_max - x_min) * 0.05
+        y_margin = (y_max - y_min) * 0.05
+        if x_margin == 0: x_margin = 1.0
+        if y_margin == 0: y_margin = 1.0
+        axis_limits = ((x_min - x_margin, x_max + x_margin), (y_min - y_margin, y_max + y_margin))
+        plt.xlim(axis_limits[0])
+        plt.ylim(axis_limits[1])
+
     plt.title(title)
     plt.xlabel("PC1")
     plt.ylabel("PC2")
@@ -80,5 +95,5 @@ def plot_pca(path:str, features, labels, title:str="PCA", n_components=2, pca=No
     plt.savefig(output_path, bbox_inches="tight")
     plt.close()
     
-    return pca
+    return pca, axis_limits
     

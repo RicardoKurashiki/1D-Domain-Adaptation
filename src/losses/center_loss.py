@@ -10,6 +10,7 @@ class CenterLoss(nn.Module):
     Args:
         num_classes (int): number of classes.
         feat_dim (int): feature dimension.
+        initial_centers (torch.Tensor, optional): initial centers for the loss. Defaults to None.
     """
     def __init__(self, num_classes=2, feat_dim=2, initial_centers=None):
         super(CenterLoss, self).__init__()
@@ -27,7 +28,7 @@ class CenterLoss(nn.Module):
             labels: ground truth labels with shape (batch_size).
         """
         batch_size = x.size(0)
-        distmat = torch.cdist(x, self.centers).pow(2)
+        distmat = torch.cdist(x, self.centers.to(x.device)).pow(2)
 
         classes = torch.arange(self.num_classes).long().to(x.device)
         labels = labels.unsqueeze(1).expand(batch_size, self.num_classes)

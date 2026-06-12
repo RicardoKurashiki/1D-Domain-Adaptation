@@ -19,6 +19,7 @@ class KermanyDataset(Dataset):
         if transform is None:
             self.transform = transforms.ToTensor()
         self.classes = {0: "NORMAL", 1: "PNEUMONIA"}
+        self.n_classes = 2
         self.root = "./data/processed/kermany/"
         
         data = self.__getdataframe__(self.root)
