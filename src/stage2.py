@@ -47,12 +47,9 @@ def train(path:str, model:Autoencoder, train_data:DataLoader, val_data:DataLoade
                     config.optimizer.zero_grad()
 
                 with torch.set_grad_enabled(phase == "train"):
-                    is_vae = model.arch in ("variational_autoencoder", "conditional_variational_autoencoder")
+                    is_vae = model.arch == "variational_autoencoder"
                     if is_vae:
-                        if model.arch == "conditional_variational_autoencoder":
-                            x_recon, z, mean, log_var = model(inputs, labels)
-                        else:
-                            x_recon, z, mean, log_var = model(inputs)
+                        x_recon, z, mean, log_var = model(inputs)
                         kl = kl_loss_fn(mean, log_var)
                     else:
                         x_recon, z = model(inputs)

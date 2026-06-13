@@ -57,12 +57,9 @@ def align_features(path: str, model: Autoencoder, data: DataLoader, data_label: 
         for inputs, labels in pbar:
             inputs = inputs.float().to(device)
             labels = labels.to(device)
-            is_vae = model.arch in ("variational_autoencoder", "conditional_variational_autoencoder")
+            is_vae = model.arch == "variational_autoencoder"
             if is_vae:
-                if model.arch == "conditional_variational_autoencoder":
-                    x_recon, z, mean, log_var = model(inputs, labels)
-                else:
-                    x_recon, z, mean, log_var = model(inputs)
+                x_recon, z, mean, log_var = model(inputs)
             else:
                 x_recon, z = model(inputs)
             all_features.append(x_recon.cpu().numpy())
