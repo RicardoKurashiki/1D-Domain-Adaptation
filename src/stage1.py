@@ -5,6 +5,7 @@ import torch.nn as nn
 import numpy as np
 from torch.utils.data import DataLoader
 from tqdm import tqdm
+from sklearn.metrics import precision_score, recall_score, f1_score
 
 from .configuration import Configuration
 from .computational_metrics import ComputationalMetrics
@@ -130,5 +131,11 @@ def test(path: str, model: ClassifierModel, data: DataLoader, criterion, verbose
     all_preds = np.array(all_preds)
     all_labels = np.array(all_labels)
     test_acc = (all_preds == all_labels).sum() / len(all_labels)
+    precision = precision_score(all_labels, all_preds, average="weighted", zero_division=0)
+    recall = recall_score(all_labels, all_preds, average="weighted", zero_division=0)
+    f1 = f1_score(all_labels, all_preds, average="weighted", zero_division=0)
 
-    print(test_acc)
+    if verbose:
+        print(f"TEST  | Loss: {test_loss:.4f} | Acc: {test_acc:.4f} | Precision: {precision:.4f} | Recall: {recall:.4f} | F1: {f1:.4f}")
+
+    return test_loss, float(test_acc), float(precision), float(recall), float(f1)

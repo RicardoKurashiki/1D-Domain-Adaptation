@@ -1,4 +1,5 @@
 import os
+import csv
 import random
 import numpy
 import torch
@@ -7,6 +8,8 @@ from torch.utils.data import DataLoader
 
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
+
+RESULTS_CSV = "src/experiments/results.csv"
 
 def set_seed(seed):
     random.seed(seed)
@@ -30,10 +33,13 @@ def create_experiment_dir(config_path):
     if not os.path.exists(latents_dir):
         os.makedirs(latents_dir)
 
-def update_registry(registry_path, row):
-    # se o arquivo não existe, cria com header
-    # se já existe, verifica se o exp_id já tem linha (update) ou adiciona
-    pass
+def append_results(row: dict, csv_path: str = RESULTS_CSV):
+    write_header = not os.path.exists(csv_path)
+    with open(csv_path, "a", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=row.keys())
+        if write_header:
+            writer.writeheader()
+        writer.writerow(row)
 
 def get_dataloader(dataset, sampler=None, batch_size=32, shuffle=True):
     pin_memory = torch.cuda.is_available()
