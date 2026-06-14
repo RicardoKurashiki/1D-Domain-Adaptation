@@ -1,0 +1,19 @@
+seed: 42
+batch_size: 32
+epochs: 500
+lr: 0.0001
+early_stopping:
+  patience: 10
+  start_epoch: 0
+reduce_lr:
+  patience: 5
+  factor: 0.1
+data_augmentation:
+  enabled: false
+model:
+  backbone: resnet18
+  unfrozen_layers: 0
+source_dataset: rsna
+stage: 1
+targets:
+- kermany

@@ -18,6 +18,8 @@ class _Encoder(nn.Module):
         self.LeakyReLU = nn.LeakyReLU(0.2)
 
     def forward(self, x):
+        # Dense(input_dim > hidden_dim) -> LeakyReLU -> Dense(hidden_dim > hidden_dim) -> LeakyReLU -> Dense(hidden_dim > latent_dim) = mean, log_var
+
         h_ = self.LeakyReLU(self.FC_input(x))
         h_ = self.LeakyReLU(self.FC_input2(h_))
         mean = self.FC_mean(h_)
@@ -46,6 +48,8 @@ class _Decoder(nn.Module):
         self.LeakyReLU = nn.LeakyReLU(0.2)
 
     def forward(self, x):
+        # Dense(latent_dim > hidden_dim) -> LeakyReLU -> Dense(hidden_dim > hidden_dim) -> LeakyReLU -> Dense(hidden_dim > output_dim) = x_hat
+
         h = self.LeakyReLU(self.FC_hidden(x))
         h = self.LeakyReLU(self.FC_hidden2(h))
         x_hat = self.FC_output(h)
@@ -71,6 +75,12 @@ class VariationalAutoencoder(nn.Module):
         self.decoder = _Decoder(input_dim, hidden_dim, latent_dim)
 
     def reparameterization(self, mean, std):
+        """
+        aqui, o epsilon é responsável pela "aleatoriedade" do sistema
+        ele é separado para que seja possível treinar o sistema usando gradient descent
+        para que seja possível saber qual é a influencia de cada variável no treinamento.
+        o epsilon é retirado de uma distribuição normal padrão (mean=0, std=1)
+        """
         epsilon = torch.randn_like(std)
         z = mean + std * epsilon
         return z

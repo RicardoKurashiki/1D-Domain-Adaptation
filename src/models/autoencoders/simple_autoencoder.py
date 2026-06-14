@@ -16,6 +16,10 @@ class _Encoder(nn.Module):
         self.relu = nn.ReLU()
 
     def forward(self, x):
+        # bem direto ao ponto o encoder, apenas:
+        # Dense(input_dim > hidden_dim) -> ReLU -> Dense(hidden_dim > latent_dim) = z
+        # autoencoder bem simples
+        
         x = self.fc1(x)
         x = self.relu(x)
         z = self.fc2(x)
@@ -42,6 +46,9 @@ class _Decoder(nn.Module):
         self.relu = nn.ReLU()
 
     def forward(self, z):
+        # Dense(latent_dim > hidden_dim) -> ReLU -> Dense(hidden_dim > output_dim) = x_hat
+        # x_hat representa a reconstrução do autoencoder
+
         z = self.fc1(z)
         z = self.relu(z)
         x_hat = self.fc2(z)

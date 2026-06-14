@@ -1,0 +1,26 @@
+stage: 1
+base:
+  seed: 42
+  batch_size: 32
+  epochs: 500
+  lr: 0.0001
+  early_stopping:
+    patience: 10
+    start_epoch: 0
+  reduce_lr:
+    patience: 5
+    factor: 0.1
+  data_augmentation:
+    enabled: false
+    rotation_range: 10
+    horizontal_flip: true
+    vertical_flip: false
+    shear_range: 0.0
+    zoom_range:
+    - 0.8
+    - 1.2
+grid:
+  model.backbone: [vit]
+  model.unfrozen_layers: [null]
+  source_dataset: [rsna, kermany]
+targets: [rsna, kermany]

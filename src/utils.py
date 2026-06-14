@@ -1,15 +1,16 @@
 import os
 import csv
+import json
 import random
 import numpy
 import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
+from torchvision import transforms
 
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
-
-RESULTS_CSV = "src/experiments/results.csv"
+from .constants import RESULTS_CSV, IMAGENET_MEAN, IMAGENET_STD
 
 def set_seed(seed):
     random.seed(seed)
@@ -19,32 +20,85 @@ def set_seed(seed):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
-def set_data_augmentation(config, split):
-    pass
+def set_transformations(config, split):
+    normalize = transforms.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD)
 
-def create_experiment_dir(config_path):
-    exp_dir = os.path.dirname(config_path)
-    if not os.path.exists(exp_dir):
-        os.makedirs(exp_dir)
-    prototypes_dir = os.path.join(exp_dir, "prototypes")
-    if not os.path.exists(prototypes_dir):
-        os.makedirs(prototypes_dir)
-    latents_dir = os.path.join(exp_dir, "latents")
-    if not os.path.exists(latents_dir):
-        os.makedirs(latents_dir)
+    aug_cfg = config.get("data_augmentation", {})
+    apply_aug = split == "train" and aug_cfg.get("enabled", False)
+
+    if apply_aug:
+        rotation = aug_cfg.get("rotation_range", 0)
+        shear    = aug_cfg.get("shear_range", 0.0)
+        zoom     = aug_cfg.get("zoom_range", None)
+        h_flip   = aug_cfg.get("horizontal_flip", False)
+        v_flip   = aug_cfg.get("vertical_flip", False)
+
+        t = [transforms.Resize(256), transforms.RandomCrop(224)]
+
+        if h_flip:
+            t.append(transforms.RandomHorizontalFlip())
+        if v_flip:
+            t.append(transforms.RandomVerticalFlip())
+
+        if rotation or shear or zoom:
+            t.append(transforms.RandomAffine(
+                degrees=rotation or 0,
+                shear=shear or None,
+                scale=tuple(zoom) if zoom else None,
+            ))
+
+        t += [transforms.ToTensor(), normalize]
+        return transforms.Compose(t)
+
+    return transforms.Compose([
+        transforms.Resize(256),
+        transforms.CenterCrop(224),
+        transforms.ToTensor(),
+        normalize,
+    ])
 
 def append_results(row: dict, csv_path: str = RESULTS_CSV):
-    write_header = not os.path.exists(csv_path)
-    with open(csv_path, "a", newline="") as f:
-        writer = csv.DictWriter(f, fieldnames=row.keys())
-        if write_header:
-            writer.writeheader()
-        writer.writerow(row)
+    key = "experiment"
+    rows = []
+    fieldnames = list(row.keys())
+
+    if os.path.exists(csv_path):
+        with open(csv_path, newline="") as f:
+            reader = csv.DictReader(f)
+            if reader.fieldnames:
+                fieldnames = list(reader.fieldnames)
+            rows = list(reader)
+
+    for col in row.keys():
+        if col not in fieldnames:
+            fieldnames.append(col)
+
+    replaced = False
+    for i, existing in enumerate(rows):
+        if str(existing.get(key, "")) == str(row.get(key, "")):
+            rows[i] = row
+            replaced = True
+            break
+    if not replaced:
+        rows.append(row)
+
+    os.makedirs(os.path.dirname(csv_path) or ".", exist_ok=True)
+    with open(csv_path, "w", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        for r in rows:
+            writer.writerow({col: r.get(col, "") for col in fieldnames})
+
+
+def save_results(row: dict, exp_dir: str, csv_path: str = RESULTS_CSV):
+    append_results(row, csv_path)
+    os.makedirs(exp_dir, exist_ok=True)
+    with open(os.path.join(exp_dir, "results.json"), "w") as f:
+        json.dump(row, f, indent=2)
 
 def get_dataloader(dataset, sampler=None, batch_size=32, shuffle=True):
     pin_memory = torch.cuda.is_available()
     if sampler is not None:
-        # batch_sampler é mutuamente exclusivo com shuffle e batch_size
         return DataLoader(
             dataset,
             batch_sampler=sampler,

@@ -13,10 +13,13 @@ device = (
     else "cpu"
 )
 
-def extract_features(path: str, model: FeatureExtractor, data: DataLoader, data_label:str=None, verbose:bool=True):
-    print(f"Loading model from {path}")
-    model.load(path)
+def extract_features(path: str, model: FeatureExtractor, data: DataLoader, data_label:str=None, verbose:bool=True, load_path:str=None):
+    load_path = load_path or path
+    print(f"Loading model from {load_path}")
+    model.load(load_path)
     model = model.to(device)
+    os.makedirs(path, exist_ok=True)
+
 
     model.eval()
 
