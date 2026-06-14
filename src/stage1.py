@@ -10,6 +10,8 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 from sklearn.metrics import precision_score, recall_score, f1_score
 
+from peft import LoraConfig
+
 from .computational_metrics import ComputationalMetrics
 from .configuration import Configuration, EarlyStoppingConfig, ReduceLROnPlateauConfig
 from .models import ClassifierModel, ExperimentMetrics, FeatureExtractor, ClassificationHead
@@ -178,7 +180,18 @@ def run(config, exp_dir, force):
     unfrozen_layers = config["model"].get("unfrozen_layers", None)
     metrics.unfrozen_layers = str(unfrozen_layers)
 
-    extractor = FeatureExtractor(backbone=backbone, unfrozen_layers=unfrozen_layers)
+    lora_config = None
+    if backbone == "vit_lora":
+        lora_cfg = config["model"].get("lora", {})
+        lora_config = LoraConfig(
+            r=lora_cfg.get("r", 8),
+            lora_alpha=lora_cfg.get("alpha", 16),
+            lora_dropout=lora_cfg.get("dropout", 0.1),
+            target_modules=lora_cfg.get("target_modules", ["q_proj", "v_proj"]),
+            bias=lora_cfg.get("bias", "none"),
+        )
+
+    extractor = FeatureExtractor(backbone=backbone, unfrozen_layers=unfrozen_layers, lora_config=lora_config)
     classifier = ClassificationHead(in_features=extractor.num_ftrs, out_features=src_train.n_classes)
     model = ClassifierModel(extractor, classifier)
 

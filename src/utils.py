@@ -7,6 +7,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 from torchvision import transforms
+from transformers import AutoImageProcessor
 
 from sklearn.decomposition import PCA
 import matplotlib.pyplot as plt
@@ -21,7 +22,17 @@ def set_seed(seed):
     torch.backends.cudnn.benchmark = False
 
 def set_transformations(config, split):
-    normalize = transforms.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD)
+    backbone = config["model"].get("backbone")
+    if backbone == "vit_lora":
+        processor = AutoImageProcessor.from_pretrained("google/vit-base-patch16-224")
+        normalize = transforms.Normalize(mean=processor.image_mean, std=processor.image_std)
+        edge = processor.size.get("shortest_edge") or processor.size.get("height") or 224
+        resize_train = [transforms.Resize((edge, edge))]
+        resize_eval = [transforms.Resize((edge, edge))]
+    else:
+        normalize = transforms.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD)
+        resize_train = [transforms.Resize(256), transforms.RandomCrop(224)]
+        resize_eval = [transforms.Resize(256), transforms.CenterCrop(224)]
 
     aug_cfg = config.get("data_augmentation", {})
     apply_aug = split == "train" and aug_cfg.get("enabled", False)
@@ -33,7 +44,7 @@ def set_transformations(config, split):
         h_flip   = aug_cfg.get("horizontal_flip", False)
         v_flip   = aug_cfg.get("vertical_flip", False)
 
-        t = [transforms.Resize(256), transforms.RandomCrop(224)]
+        t = list(resize_train)
 
         if h_flip:
             t.append(transforms.RandomHorizontalFlip())
@@ -50,12 +61,7 @@ def set_transformations(config, split):
         t += [transforms.ToTensor(), normalize]
         return transforms.Compose(t)
 
-    return transforms.Compose([
-        transforms.Resize(256),
-        transforms.CenterCrop(224),
-        transforms.ToTensor(),
-        normalize,
-    ])
+    return transforms.Compose(resize_eval + [transforms.ToTensor(), normalize])
 
 def append_results(row: dict, csv_path: str = RESULTS_CSV):
     key = "experiment"

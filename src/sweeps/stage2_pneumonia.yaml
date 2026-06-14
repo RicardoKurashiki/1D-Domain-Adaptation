@@ -1,5 +1,5 @@
 stage: 2
-stage1: null
+stage1: null #null usa todos os modelos disponíveis
 targets: [kermany, rsna]
 base:
   seed: 42
@@ -7,7 +7,6 @@ base:
   epochs: 500
   lr: 0.0001
   autoencoder:
-    arch: variational_autoencoder
     hidden_dim_ratio: 0.5
     latent_dim_ratio: 0.25
   alignment:
@@ -20,6 +19,7 @@ base:
     patience: 5
     factor: 0.1
 grid:
+  autoencoder.arch: [variational_autoencoder, simple_autoencoder]
   prototype.clustering: [k_means, k_medoids, k_center]
   prototype.undersampling: [null, enn]
   prototype.n_clusters: [1, 2]
