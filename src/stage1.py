@@ -102,9 +102,6 @@ def train(path:str, model: ClassifierModel, train_data:DataLoader, val_data:Data
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
 
-    if torch.cuda.is_available():
-        torch.cuda.reset_peak_memory_stats()
-    
     model.load(path)
     return True
 
@@ -221,12 +218,21 @@ def run(config, exp_dir, force):
         reduce_lr=reduce_lr,
     )
 
+    comp_metrics = ComputationalMetrics(
+        trainable_params=model.get_trainable_params(),
+        model_size=model.get_model_size(),
+    )
+
     weights_exist = os.path.exists(os.path.join(exp_dir, "extractor_weight.pt"))
     if not weights_exist or force:
+        comp_metrics.start()
         train(path=exp_dir, model=model, train_data=src_train_data, val_data=src_val_data, config=training_config)
+        comp_metrics.finish()
     else:
         print(f"Weights found in {exp_dir}, skipping training.")
         model.load(exp_dir)
+
+    metrics.set_computational_metrics(comp_metrics)
 
     source_loss, source_acc, source_pre, source_rec, source_f1 = test(
         path=exp_dir, model=model, data=src_test_data, criterion=criterion
@@ -238,12 +244,12 @@ def run(config, exp_dir, force):
     metrics.source_rec = round(source_rec, 6)
     metrics.source_f1 = round(source_f1, 6)
 
-    src_train_feat = source_dataset(split="train")
+    src_train_feat = source_dataset(split="train", transform=utils.set_transformations(config, "test"))
     src_train_feat_data = utils.get_dataloader(src_train_feat, batch_size=batch_size, shuffle=False)
     if not os.path.exists(os.path.join(exp_dir, "source_features.npy")) or force:
         extract_features(path=exp_dir, model=extractor, data=src_train_feat_data, data_label="source")
 
-    src_test_feat = source_dataset(split="test")
+    src_test_feat = source_dataset(split="test", transform=utils.set_transformations(config, "test"))
     src_test_feat_data = utils.get_dataloader(src_test_feat, batch_size=batch_size, shuffle=False)
     if not os.path.exists(os.path.join(exp_dir, "source_test_features.npy")) or force:
         extract_features(path=exp_dir, model=extractor, data=src_test_feat_data, data_label="source_test")
@@ -261,9 +267,9 @@ def run(config, exp_dir, force):
         target_dataset = DATASET_MAP[target_name]
         target_dir = os.path.join(exp_dir, target_name)
 
-        tgt_train = target_dataset(split="train")
-        tgt_val = target_dataset(split="val")
-        tgt_test = target_dataset(split="test")
+        tgt_train = target_dataset(split="train", transform=utils.set_transformations(config, "test"))
+        tgt_val = target_dataset(split="val", transform=utils.set_transformations(config, "test"))
+        tgt_test = target_dataset(split="test", transform=utils.set_transformations(config, "test"))
         tgt_train_data = utils.get_dataloader(tgt_train, batch_size=batch_size, shuffle=False)
         tgt_val_data = utils.get_dataloader(tgt_val, batch_size=batch_size, shuffle=False)
         tgt_test_data = utils.get_dataloader(tgt_test, batch_size=batch_size, shuffle=False)

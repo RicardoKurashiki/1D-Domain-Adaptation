@@ -8,6 +8,7 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 from sklearn.metrics import precision_score, recall_score, f1_score
 
+from .computational_metrics import ComputationalMetrics
 from .configuration import AutoencoderConfiguration, EarlyStoppingConfig, ReduceLROnPlateauConfig
 from .models import ClassificationHead, Autoencoder, ExperimentMetrics
 from .losses import KLDivergenceLoss, CenterLoss
@@ -109,9 +110,6 @@ def train(path:str, model:Autoencoder, train_data:DataLoader, val_data:DataLoade
 
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
-
-    if torch.cuda.is_available():
-        torch.cuda.reset_peak_memory_stats()
 
     model.load(path)
     return True
@@ -259,12 +257,21 @@ def run(config: dict, exp_dir: str, force: bool):
     src_test_feature_dataset = FeatureSpaceDataset(features=src_test_features, labels=src_test_labels)
     src_test_feature_data = utils.get_dataloader(src_test_feature_dataset, batch_size=batch_size, shuffle=False)
 
+    comp_metrics = ComputationalMetrics(
+        trainable_params=autoencoder.get_trainable_params(),
+        model_size=autoencoder.get_model_size(),
+    )
+
     vae_exists = os.path.exists(os.path.join(exp_dir, "vae_encoder.pt"))
     if not vae_exists or force:
+        comp_metrics.start()
         train(path=exp_dir, model=autoencoder, train_data=tgt_feature_data, val_data=tgt_val_feature_data, config=ae_config)
+        comp_metrics.finish()
     else:
         print(f"VAE weights found in {exp_dir}, skipping training.")
         autoencoder.load(exp_dir)
+
+    metrics.set_computational_metrics(comp_metrics)
 
     aligned_features, aligned_labels = align_features(
         path=exp_dir, model=autoencoder, data=tgt_test_feature_data, data_label="target_aligned"

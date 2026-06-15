@@ -4,6 +4,13 @@ base:
   batch_size: 32
   epochs: 500
   lr: 0.0001
+  model:
+    lora:
+      r: 8
+      alpha: 16
+      dropout: 0.1
+      target_modules: [q_proj, v_proj]
+      bias: none
   early_stopping:
     patience: 10
     start_epoch: 0
@@ -20,7 +27,7 @@ base:
     - 0.8
     - 1.2
 grid:
-  model.backbone: [resnet18]
+  model.backbone: [resnet18, resnet50, densenet121, vgg16, vgg19, mobilenetv3, efficientnetv2]
   model.unfrozen_layers: [0, 3, 5, null]
-  source_dataset: [rsna, kermany]
+  source_dataset: [kermany, rsna]
 targets: [rsna, kermany]

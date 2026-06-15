@@ -27,3 +27,16 @@ class Autoencoder(nn.Module):
 
     def load(self, path):
         self.model.load(path)
+
+    def get_trainable_params(self):
+        return sum(p.numel() for p in self.model.parameters() if p.requires_grad)
+
+    def get_model_size(self):
+        param_size = 0
+        for param in self.model.parameters():
+            param_size += param.nelement() * param.element_size()
+        buffer_size = 0
+        for buffer in self.model.buffers():
+            buffer_size += buffer.nelement() * buffer.element_size()
+
+        return (param_size + buffer_size) / 1024**2

@@ -34,6 +34,19 @@ class ExperimentMetrics:
         self.aligned_pre = ""
         self.aligned_rec = ""
         self.aligned_f1 = ""
+        self.trainable_params = ""
+        self.model_size_mb = ""
+        self.training_time_s = ""
+        self.peak_gpu_memory_mb = ""
+        self.peak_cpu_memory_mb = ""
+
+    def set_computational_metrics(self, comp):
+        data = comp.to_json()
+        self.trainable_params = data["trainable_params"]
+        self.model_size_mb = data["model_size_mb"]
+        self.training_time_s = data["training_time_s"]
+        self.peak_gpu_memory_mb = data["peak_gpu_memory_mb"]
+        self.peak_cpu_memory_mb = data["peak_cpu_memory_mb"]
 
     def to_json(self):
         return {
@@ -70,5 +83,10 @@ class ExperimentMetrics:
             "aligned_acc":  self.aligned_acc,
             "aligned_pre":  self.aligned_pre,
             "aligned_rec":  self.aligned_rec,
-            "aligned_f1":  self.aligned_f1
+            "aligned_f1":  self.aligned_f1,
+            "trainable_params": self.trainable_params,
+            "model_size_mb": self.model_size_mb,
+            "training_time_s": self.training_time_s,
+            "peak_gpu_memory_mb": self.peak_gpu_memory_mb,
+            "peak_cpu_memory_mb": self.peak_cpu_memory_mb
         }

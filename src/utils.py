@@ -63,6 +63,16 @@ def set_transformations(config, split):
 
     return transforms.Compose(resize_eval + [transforms.ToTensor(), normalize])
 
+def _merge_row(existing: dict, new: dict) -> dict:
+    merged = dict(existing)
+    for col, val in new.items():
+        if val != "" and val is not None:
+            merged[col] = val
+        elif col not in merged:
+            merged[col] = val
+    return merged
+
+
 def append_results(row: dict, csv_path: str = RESULTS_CSV):
     key = "experiment"
     rows = []
@@ -82,7 +92,7 @@ def append_results(row: dict, csv_path: str = RESULTS_CSV):
     replaced = False
     for i, existing in enumerate(rows):
         if str(existing.get(key, "")) == str(row.get(key, "")):
-            rows[i] = row
+            rows[i] = _merge_row(existing, row)
             replaced = True
             break
     if not replaced:
@@ -99,7 +109,12 @@ def append_results(row: dict, csv_path: str = RESULTS_CSV):
 def save_results(row: dict, exp_dir: str, csv_path: str = RESULTS_CSV):
     append_results(row, csv_path)
     os.makedirs(exp_dir, exist_ok=True)
-    with open(os.path.join(exp_dir, "results.json"), "w") as f:
+    json_path = os.path.join(exp_dir, "results.json")
+    if os.path.exists(json_path):
+        with open(json_path) as f:
+            existing = json.load(f)
+        row = _merge_row(existing, row)
+    with open(json_path, "w") as f:
         json.dump(row, f, indent=2)
 
 def get_dataloader(dataset, sampler=None, batch_size=32, shuffle=True):

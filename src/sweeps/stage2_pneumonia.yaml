@@ -1,5 +1,5 @@
 stage: 2
-stage1: null #null usa todos os modelos disponíveis
+stage1: null # null usa todos os modelos disponíveis
 targets: [kermany, rsna]
 base:
   seed: 42
