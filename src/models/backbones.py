@@ -25,30 +25,35 @@ class FeatureExtractor(nn.Module):
                 base_model = densenet121(weights=weights)
                 self.num_ftrs = base_model.classifier.in_features
                 self.backbone = base_model.features
+                self.pool = nn.AdaptiveAvgPool2d((1, 1))
             case "vgg16":
                 from torchvision.models import vgg16, VGG16_Weights
                 weights = VGG16_Weights.IMAGENET1K_V1
                 base_model = vgg16(weights=weights)
                 self.num_ftrs = base_model.classifier[0].in_features
                 self.backbone = base_model.features
+                self.pool = nn.AdaptiveAvgPool2d((7, 7))
             case "vgg19":
                 from torchvision.models import vgg19, VGG19_Weights
                 weights = VGG19_Weights.IMAGENET1K_V1
                 base_model = vgg19(weights=weights)
                 self.num_ftrs = base_model.classifier[0].in_features
                 self.backbone = base_model.features
+                self.pool = nn.AdaptiveAvgPool2d((7, 7))
             case "mobilenetv3":
                 from torchvision.models import mobilenet_v3_small, MobileNet_V3_Small_Weights
                 weights = MobileNet_V3_Small_Weights.IMAGENET1K_V1
                 base_model = mobilenet_v3_small(weights=weights)
                 self.num_ftrs = base_model.classifier[0].in_features
                 self.backbone = base_model.features
+                self.pool = nn.AdaptiveAvgPool2d((1, 1))
             case "efficientnetv2":
                 from torchvision.models import efficientnet_v2_s, EfficientNet_V2_S_Weights
                 weights = EfficientNet_V2_S_Weights.IMAGENET1K_V1
                 base_model = efficientnet_v2_s(weights=weights)
                 self.num_ftrs = base_model.classifier[1].in_features
                 self.backbone = base_model.features
+                self.pool = nn.AdaptiveAvgPool2d((1, 1))
             case "resnet18":
                 from torchvision.models import resnet18, ResNet18_Weights
                 weights = ResNet18_Weights.IMAGENET1K_V1
@@ -111,6 +116,8 @@ class FeatureExtractor(nn.Module):
         if self.is_lora:
             return self.backbone(x).last_hidden_state[:,0,:]
         x = self.backbone(x)
+        if hasattr(self, "pool"):
+            x = self.pool(x)
         return x.view(x.size(0), -1)
 
     def save(self, path):
