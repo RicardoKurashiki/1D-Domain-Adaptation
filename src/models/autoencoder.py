@@ -17,6 +17,12 @@ class Autoencoder(nn.Module):
         if arch == "variational_autoencoder":
             from .autoencoders import VariationalAutoencoder
             return VariationalAutoencoder(input_dim=self.input_dim, hidden_dim=self.hidden_dim, latent_dim=self.latent_dim)
+        if arch == "skip_autoencoder":
+            from .autoencoders import SkipAutoencoder
+            return SkipAutoencoder(input_dim=self.input_dim, hidden_dim=self.hidden_dim, latent_dim=self.latent_dim)
+        if arch == "linear_autoencoder":
+            from .autoencoders import LinearAutoencoder
+            return LinearAutoencoder(input_dim=self.input_dim, latent_dim=self.latent_dim)
 
     def forward(self, x):
         return self.model(x)

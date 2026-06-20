@@ -3,7 +3,7 @@ stage1: null # null usa todos os modelos disponíveis
 targets: [kermany, rsna]
 base:
   seed: 42
-  batch_size: 32
+  batch_size: 64
   epochs: 500
   lr: 0.0001
   autoencoder:
@@ -14,12 +14,12 @@ base:
     kl_weight: 0.1
     reconstruction_weight: 0.0
   early_stopping:
-    patience: 10
+    patience: 20
   reduce_lr:
     patience: 5
     factor: 0.1
 grid:
-  autoencoder.arch: [variational_autoencoder, simple_autoencoder]
+  autoencoder.arch: [variational_autoencoder, simple_autoencoder, skip_autoencoder, linear_autoencoder]
   prototype.clustering: [k_means, k_medoids, k_center]
   prototype.undersampling: [null, enn, renn, tomek_links]
   prototype.n_clusters: [1]

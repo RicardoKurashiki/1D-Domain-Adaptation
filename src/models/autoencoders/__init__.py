@@ -1,2 +1,4 @@
 from .simple_autoencoder import SimpleAutoencoder
 from .variational_autoencoder import VariationalAutoencoder
+from .linear_autoencoder import LinearAutoencoder
+from .skip_autoencoder import SkipAutoencoder

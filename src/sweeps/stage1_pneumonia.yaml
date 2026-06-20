@@ -12,7 +12,7 @@ base:
       target_modules: [q_proj, v_proj]
       bias: none
   early_stopping:
-    patience: 10
+    patience: 20
     start_epoch: 0
   reduce_lr:
     patience: 5
