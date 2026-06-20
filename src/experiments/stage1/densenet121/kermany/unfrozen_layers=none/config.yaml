@@ -14,7 +14,7 @@ model:
   backbone: densenet121
   unfrozen_layers: null
 early_stopping:
-  patience: 10
+  patience: 20
   start_epoch: 0
 reduce_lr:
   patience: 5

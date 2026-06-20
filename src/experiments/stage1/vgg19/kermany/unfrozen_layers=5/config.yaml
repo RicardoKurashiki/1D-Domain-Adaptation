@@ -14,7 +14,7 @@ model:
   backbone: vgg19
   unfrozen_layers: 5
 early_stopping:
-  patience: 10
+  patience: 20
   start_epoch: 0
 reduce_lr:
   patience: 5

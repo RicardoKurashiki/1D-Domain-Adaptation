@@ -9,7 +9,7 @@
   "batch_size": 32,
   "lr": 0.0001,
   "epochs": 500,
-  "es_patience": 10,
+  "es_patience": 20,
   "reduce_lr_patience": 5,
   "n_clusters": "",
   "clustering": "",
@@ -35,7 +35,7 @@
   "aligned_f1": "",
   "trainable_params": 27692098,
   "model_size_mb": 105.636971,
-  "training_time_s": 1257.062171,
-  "peak_gpu_memory_mb": 2736.054688,
-  "peak_cpu_memory_mb": 4160.148438
+  "training_time_s": 2405.593891,
+  "peak_gpu_memory_mb": 2813.901367,
+  "peak_cpu_memory_mb": 4228.578125
 }
